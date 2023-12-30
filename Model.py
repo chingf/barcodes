@@ -26,6 +26,7 @@ class Model():
 
     def reset(self):
         self.J_xy = np.zeros([self.N_inp, self.N_bar])
+        self.J_xz = np.zeros([1, self.N_bar])
         rand_J = np.random.randn(self.N_bar, self.N_bar)
         self.J_xx = self.rec_strength*(rand_J / np.sqrt(self.N_bar))
         self.J_xx += (self.weight_bias / self.N_bar)
@@ -70,9 +71,35 @@ class Model():
         final_output = np.matmul(final_acts, self.J_xy.transpose())
         return final_preacts, final_acts, final_output, acts_over_time
 
+    def binary_readout(self, acts):
+        return np.matmul(acts, self.J_xz.transpose())
+
+    def test_run(self, search_factor, inputs):
+        inputs = inputs+search_factor*self.J_sx
+        N_inp = self.N_inp; N_bar = self.N_bar; num_states = self.num_states
+        divisive_normalization = self.divisive_normalization;
+        steps = self.steps; dt = self.dt; 
+        J_xx = self.J_xx
+
+        preacts = np.zeros([num_states, N_bar])
+        acts = np.zeros([num_states, N_bar])
+        acts_over_time = np.zeros([steps, num_states, N_bar])
+        reconstruct_over_time = np.zeros([steps, num_states, N_inp])
+        for s in range(steps):
+            preacts = preacts*(1 - divisive_normalization*np.sum(acts, axis=1, keepdims=True)/N_bar * dt) + dt*np.matmul(acts, J_xx)+dt*inputs
+            acts = relu(preacts)
+
+            final_preacts = preacts.copy()
+            final_acts = acts.copy()
+            final_output = np.matmul(final_acts, self.J_xy.transpose())
+            acts_over_time[s] = final_acts
+            reconstruct_over_time[s] = final_output
+        return final_preacts, final_acts, final_output, acts_over_time, reconstruct_over_time
+
     def update(self, inputs, act, preact):
         self.J_sx += act
         self.J_xy += np.outer(inputs, act)
+        self.J_xz += np.outer(np.array([1]), act) #- 0.3*np.outer(np.array([1]), np.ones(act.shape))
 
         act = act.reshape((1, -1))
         preact = preact.reshape((1, -1))
