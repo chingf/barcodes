@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import numpy as np
+>>>>>>> 352f287731f3a3e894a86a0979c76258ac77a7ef
 from utils import *
 
 class Model():
@@ -86,7 +90,6 @@ class Model():
     def update(self, inputs, act, preact):
         self.J_xy += np.outer(inputs, act)
         self.J_xz += np.outer(np.array([1]), act)
-
         act = act.reshape((1, -1))
         preact = preact.reshape((1, -1))
         delta_J = np.matmul(act.transpose(), preact)
