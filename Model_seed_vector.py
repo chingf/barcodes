@@ -50,7 +50,7 @@ class Model():
         return self.run_recall(self.narrow_search_factor, inputs, n_zero_input)
 
     def run_recall(self, search_factor, inputs, n_zero_input=0):
-        return self.run(inputs+search_factor*self.J_sx, n_zero_input)
+        return self.run(inputs+search_factor*self.J_sx, n_zero_input, seed_steps=0)
 
     def run(self, inputs, n_zero_input=0, J_xx=None, seed_steps = None):
         if seed_steps is None:
