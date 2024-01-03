@@ -13,8 +13,7 @@ import configs
 
 # Determine experiment
 n_seeds = 15
-exp = 'default'
-params = {}
+params = {'rec_strength': 0.0, 'weight_bias': 0.}
 
 # Fixed parameters
 N_inp = 2000
@@ -35,7 +34,7 @@ elif 'SLURM_JOBID' in os.environ.keys():
     engram_dir = '/mnt/smb/locker/aronov-locker/Ching/barcodes/' # Axon Path
 else:
     engram_dir = '/home/cf2794/engram/Ching/barcodes/' # Cortex Path
-exp_dir = engram_dir + 'capacity/' + exp + '/'
+exp_dir = engram_dir + 'barcode_ablation/'
 os.makedirs(exp_dir, exist_ok=True)
 n_cpu_jobs = 5
 
