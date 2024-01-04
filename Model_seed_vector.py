@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 import numpy as np
->>>>>>> 352f287731f3a3e894a86a0979c76258ac77a7ef
 from utils import *
 
 class Model():
