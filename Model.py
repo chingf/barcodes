@@ -48,6 +48,21 @@ class Model():
     def run_recall(self, search_factor, inputs, n_zero_input=0):
         return self.run(inputs+search_factor*self.J_sx, n_zero_input, seed_steps=0)
 
+    def run_seed_only(self, seed_steps=5, search_factor=1.):
+        N_inp = self.N_inp; N_bar = self.N_bar; num_states = self.num_states
+        divisive_normalization = self.divisive_normalization; J_xx = self.J_xx
+        dt = self.dt
+
+        preacts = np.zeros([num_states, N_bar])
+        acts = np.zeros([num_states, N_bar])
+        acts_over_time = np.zeros([seed_steps, num_states, N_bar])
+        for s in range(seed_steps):
+            preacts = preacts*(1 - divisive_normalization*np.sum(acts, axis=1, keepdims=True)/N_bar * dt) + dt*np.matmul(acts, J_xx)+dt*(self.J_sx*search_factor)
+            acts = relu(preacts)
+            acts_over_time[s] = acts.copy()
+        output = np.matmul(acts, self.J_xy.transpose())
+        return preacts, acts, output, acts_over_time
+
     def run(self, inputs, n_zero_input=0, J_xx=None, seed_steps = None):
         if seed_steps is None:
             seed_steps=self.seed_steps

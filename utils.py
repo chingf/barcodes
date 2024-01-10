@@ -13,8 +13,7 @@ def pairwise_correlations_centered(x):
 def cos_sim(a, b):
     return np.dot(a, b)/(np.linalg.norm(a)*np.linalg.norm(b))
 
-def poiss_corr(a, b):
-    scale = 1.
+def poiss_corr(a, b, scale=1.):
     poiss_a = poisson(scale*a).rvs()
     poiss_b = poisson(scale*b).rvs()
     return np.corrcoef(poiss_a, poiss_b)[0, 1]
