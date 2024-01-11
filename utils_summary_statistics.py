@@ -30,22 +30,18 @@ def get_resolution_summary_statistics(
 
     num_states = readout.size
     N_inp = N_bar = reconstruct.shape[1]
-    
-    identification_1 = { # What is FP conditioned on FN = 0
-        'score': [], 'site spacing': [], 'search strength': []
-        }
 
-    identification_2 = { # What threshold to binarize at?
+    identification_1 = { # What threshold to binarize at?
         'threshold': [], 'site spacing': [], 'search strength': [],
         'accuracy': [], 'sensitivity': [], 'specificity': []
         }
 
-    identification_3 = { # What are noncache values b/n cache 1 & 2?
+    identification_2 = { # What are noncache values b/n cache 1 & 2?
         'site spacing': [], 'search strength': [],
         'noncache diff': [], 'noncache val': []
         }
 
-    identification_4 = { # What are noncache vals away from cache locs?
+    identification_3 = { # What are noncache vals away from cache locs?
         'site spacing': [], 'search strength': [],
         'dist from attractor': [], 'val': [],
         }
@@ -76,7 +72,7 @@ def get_resolution_summary_statistics(
     
     summary_stats = {
         'identification_1': identification_1, 'identification_2': identification_2,
-        'identification_3': identification_3, 'identification_4': identification_4,
+        'identification_3': identification_3,
         'reconstruct_1': reconstruct_1, 'reconstruct_2': reconstruct_2,
         'reconstruct_3': reconstruct_3, 'activations_1': activations_1
         }
@@ -89,42 +85,35 @@ def get_resolution_summary_statistics(
         get_dist_from_attractor(cache_state_idxs)
 
     # Identification 1
-    threshold = readout[cache_states].min()
-    identification_1['score'].append(np.sum(threshold-readout[noncache_state_idxs])/97)
-    identification_1['site spacing'].append(site_spacing)
-    identification_1['search strength'].append(search_strength)
-
-    # Identification 2
     for threshold in np.arange(0.0, 1.0, 0.1):
         _readout = np.digitize(readout, [threshold])
         true_pos = np.sum(_readout[cache_state_idxs])
         true_neg = np.sum(_readout[noncache_state_idxs]==0)
         acc = (true_pos + true_neg)/100
-        identification_2['threshold'].append(threshold)
-        identification_2['site spacing'].append(site_spacing)
-        identification_2['search strength'].append(search_strength)
-        identification_2['accuracy'].append(acc)
-        identification_2['sensitivity'].append(true_pos/3)
-        identification_2['specificity'].append(true_neg/97)
+        identification_1['threshold'].append(threshold)
+        identification_1['site spacing'].append(site_spacing)
+        identification_1['search strength'].append(search_strength)
+        identification_1['accuracy'].append(acc)
+        identification_1['sensitivity'].append(true_pos/3)
+        identification_1['specificity'].append(true_neg/97)
 
-    # Identification 3
+    # Identification 2
     c1 = cache_states[0]; c2 = cache_states[1];
     cache_val = min([readout[c1], readout[c2]])
     nc1 = floor((c1 + c2)/2); nc2 = ceil((c1 + c2)/2);
     noncache_val = (readout[nc1] + readout[nc2])/2
-    identification_3['noncache val'].append(noncache_val)
-    identification_3['noncache diff'].append(noncache_val-cache_val)
-    identification_3['site spacing'].append(site_spacing)
-    identification_3['search strength'].append(search_strength)
+    identification_2['noncache val'].append(noncache_val)
+    identification_2['noncache diff'].append(noncache_val-cache_val)
+    identification_2['site spacing'].append(site_spacing)
+    identification_2['search strength'].append(search_strength)
 
-    # Identification 4
-    threshold = readout[cache_states].min()
-    vals = threshold - readout[noncache_state_idxs]
-    identification_4['site spacing'].extend([site_spacing]*97)
-    identification_4['search strength'].extend([search_strength]*97)
-    identification_4['dist from attractor'].extend(
+    # Identification 3
+    vals = readout[noncache_state_idxs]
+    identification_3['site spacing'].extend([site_spacing]*97)
+    identification_3['search strength'].extend([search_strength]*97)
+    identification_3['dist from attractor'].extend(
         list(dist_from_attractor[noncache_state_idxs]))
-    identification_4['val'].extend(list(vals))
+    identification_3['val'].extend(list(vals))
 
     # Reconstruction 1
     peak_locs = np.argmax(reconstruct, axis=1)

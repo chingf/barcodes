@@ -14,7 +14,7 @@ import configs
 # Determine experiment
 exp = sys.argv[1]
 model_type = sys.argv[2]
-n_seeds = 25
+n_seeds = 10
 args = []
 
 exp_params = []
@@ -45,9 +45,17 @@ elif exp == 'plasticity_bias': # Offset in plasticity update
 param_sweep_search_strengths = [
     0., 0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1., 1.5, 2.0]
 
+# Fixed parameters
+N_inp = 5000
+N_bar = 5000
+num_states = 100
 if model_type == 'default':
     model_params = {}
     place_input_params = {}
+elif model_type == 'big':
+    model_params = {}
+    place_input_params = {}
+    N_inp *= 3; N_bar *= 3
 elif model_type == 'barcode_ablation':
     model_params = {'rec_strength': 0.0, 'weight_bias': 0.}
     if exp == 'rec_strength':
@@ -85,10 +93,6 @@ else:
 exp_dir = engram_dir + 'resolution/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
 
-# Fixed parameters
-N_inp = 5000
-N_bar = 5000
-num_states = 100
 
 def run(arg):
     # Unpack arguments
