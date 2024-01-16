@@ -8,7 +8,7 @@ class Model():
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
         lr=80.0, plasticity_bias = -0.35, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
-        forget_readout_lr=0.3, forget_lr=4.0, forget_plasticity_bias=-2.5
+        forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25
         ):
 
         self.N_inp = N_inp
