@@ -45,6 +45,16 @@ def get_resolution_summary_statistics(
         'site spacing': [], 'search strength': [],
         'dist from attractor': [], 'val': [],
         }
+    
+    identification_4 = { # What are vals at each cache??
+        'site spacing': [], 'search strength': [],
+        'cache': [], 'val': [],
+        }
+    
+    identification_5 = { # What are vals at each cache??
+        'site spacing': [], 'search strength': [],
+        'n_caches_correct': [],
+        }
 
     reconstruct_1 = { # Validity
         'p_valid': [], 'search strength': [],
@@ -72,7 +82,8 @@ def get_resolution_summary_statistics(
     
     summary_stats = {
         'identification_1': identification_1, 'identification_2': identification_2,
-        'identification_3': identification_3,
+        'identification_3': identification_3, 'identification_4': identification_4,
+        'identification_5': identification_5,
         'reconstruct_1': reconstruct_1, 'reconstruct_2': reconstruct_2,
         'reconstruct_3': reconstruct_3, 'activations_1': activations_1
         }
@@ -114,6 +125,19 @@ def get_resolution_summary_statistics(
     identification_3['dist from attractor'].extend(
         list(dist_from_attractor[noncache_state_idxs]))
     identification_3['val'].extend(list(vals))
+    
+    # Identification 4
+    vals = readout[cache_state_idxs]
+    identification_4['site spacing'].extend([site_spacing]*3)
+    identification_4['search strength'].extend([search_strength]*3)
+    identification_4['cache'].extend([1,2,3])
+    identification_4['val'].extend(list(vals))
+    
+    # Identification 4
+    n_caches_correct = np.sum(readout[cache_state_idxs] > 0.5)
+    identification_5['site spacing'].append(site_spacing)
+    identification_5['search strength'].append(search_strength)
+    identification_5['n_caches_correct'].append(n_caches_correct)
 
     # Reconstruction 1
     peak_locs = np.argmax(reconstruct, axis=1)
