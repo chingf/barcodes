@@ -8,6 +8,7 @@ class Model():
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
         lr=80.0, plasticity_bias = -0.35, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
+        forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25
         ):
 
         self.N_inp = N_inp
@@ -24,6 +25,9 @@ class Model():
         self.narrow_search_factor = narrow_search_factor
         self.wide_search_factor = wide_search_factor
         self.seed_strength_cache = seed_strength_cache
+        self.forget_readout_lr = forget_readout_lr
+        self.forget_lr = forget_lr
+        self.forget_plasticity_bias = forget_plasticity_bias
         self.reset()
 
     def reset(self):
@@ -31,6 +35,7 @@ class Model():
         rand_J = np.random.randn(self.N_bar, self.N_bar)
         self.J_xx = self.rec_strength*(rand_J / np.sqrt(self.N_bar))
         self.J_xx += (self.weight_bias / self.N_bar)
+        self.J_xx_orig = np.copy(self.J_xx)
         self.J_sx = np.random.randn(self.N_bar)
 
     def run_nonrecurrent(self, inputs, n_zero_input=0):
@@ -99,15 +104,13 @@ class Model():
         self.J_xy += np.outer(inputs, act)
         act = act.reshape((1, -1))
         preact = preact.reshape((1, -1))
-        delta_J = np.matmul(act.transpose(), act)
-        delta_J += np.matmul(np.ones_like(act.transpose())*self.plasticity_bias, act)
+        delta_J = np.matmul(act.transpose()+self.plasticity_bias, act)
         self.J_xx += self.lr * delta_J / self.N_bar
    
-    def reverse_update(self, inputs, act, preact, forget_lr_multiplier=1.0):
-        #self.J_xy -= forget_lr_multiplier * np.outer(inputs, act)
+    def reverse_update(self, act):
+        recon = np.dot(self.J_xy, act)
+        self.J_xy -= self.forget_readout_lr * np.outer(recon, act) / self.N_bar
         act = act.reshape((1, -1))
-        preact = preact.reshape((1, -1))
-        delta_J = 0*np.matmul(act.transpose(), preact)
-        delta_J += np.matmul(np.ones_like(act.transpose())*self.plasticity_bias, act)
-        self.J_xx -= forget_lr_multiplier * self.lr * delta_J / self.N_bar
+        delta_J = np.matmul((act.transpose() + self.forget_plasticity_bias), act)
+        self.J_xx -= self.forget_lr * delta_J / self.N_bar
 
