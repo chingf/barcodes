@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import time
 
-from Model import Model
+from Model_less_weird import Model
 from PlaceInputs import PlaceInputs
 from utils import *
 import configs
@@ -14,12 +14,13 @@ import configs
 # Determine experiment
 exp = sys.argv[1]
 model_type = sys.argv[2]
-n_seeds = 10
+n_seeds = 20
 args = []
 
 exp_params = []
+param_sweep_search_strengths = [0., 0.2, 0.4, 0.6, 0.8, 1., 1.5, 2.0]
 if exp == 'narrow_search_factor': # Just vary search strength
-    for v in [0., 0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1., 1.5, 2.0]:
+    for v in param_sweep_search_strengths:
         exp_params.append({exp: v})
 elif exp == 'rec_strength': # Strength of recurrent dynamics
     for v in [0, 3, 5, 7, 9, 11, 13, 15]:
@@ -42,9 +43,6 @@ elif exp == 'plasticity_bias': # Offset in plasticity update
             lr = 50
         exp_params.append({exp: v, 'lr': lr})
 
-param_sweep_search_strengths = [
-    0., 0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1., 1.5, 2.0]
-
 # Fixed parameters
 N_inp = 5000
 N_bar = 5000
@@ -56,6 +54,7 @@ elif model_type == 'big':
     model_params = {}
     place_input_params = {}
     N_inp *= 3; N_bar *= 3
+    n_seeds = 10
 elif model_type == 'barcode_ablation':
     model_params = {'rec_strength': 0.0, 'weight_bias': 0.}
     if exp == 'rec_strength':
@@ -92,7 +91,6 @@ else:
     engram_dir = '/home/cf2794/engram/Ching/barcodes/' # Cortex Path
 exp_dir = engram_dir + 'resolution/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
-
 
 def run(arg):
     # Unpack arguments

@@ -4,3 +4,4 @@ __pycache__/
 *.p
 .nfs*
 *.png
+old/
