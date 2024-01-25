@@ -6,7 +6,7 @@ class Model():
         N_inp, N_bar, num_states,
         rec_strength=7.0, weight_bias=-40, # Initial weights
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
-        lr=80.0, plasticity_bias = -0.35, # Learning
+        lr=40.0, plasticity_bias = -0.35, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
         forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25
         ):
@@ -53,21 +53,6 @@ class Model():
 
     def run_recall(self, search_factor, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input, seed_steps=0, search_factor=search_factor)
-
-    def run_seed_only(self, seed_steps=5, search_factor=1.):
-        N_inp = self.N_inp; N_bar = self.N_bar; num_states = self.num_states
-        divisive_normalization = self.divisive_normalization; J_xx = self.J_xx
-        dt = self.dt
-
-        preacts = np.zeros([num_states, N_bar])
-        acts = np.zeros([num_states, N_bar])
-        acts_over_time = np.zeros([seed_steps, num_states, N_bar])
-        for s in range(seed_steps):
-            preacts = preacts*(1 - divisive_normalization*np.sum(acts, axis=1, keepdims=True)/N_bar * dt) + dt*np.matmul(acts, J_xx)+dt*(self.J_sx*search_factor)
-            acts = relu(preacts)
-            acts_over_time[s] = acts.copy()
-        output = np.matmul(acts, self.J_xy.transpose())
-        return preacts, acts, output, acts_over_time
 
     def run(self, raw_inputs, n_zero_input=0, J_xx=None, seed_steps = None, search_factor=0.0):
         if seed_steps is None:
