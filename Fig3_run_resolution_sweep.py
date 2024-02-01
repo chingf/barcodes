@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import time
 
-from Model_less_weird import Model
+from Model import Model
 from PlaceInputs import PlaceInputs
 from utils import *
 import configs
