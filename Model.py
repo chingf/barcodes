@@ -49,6 +49,9 @@ class Model():
 
     def run_nonrecurrent(self, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input, np.zeros(self.J_xx.shape), seed_steps=0)
+    
+    def run_recurrent_r(self, inputs, r, n_zero_input=0):
+        return self.run(inputs, n_zero_input, r*self.J_xx, seed_steps=0)
 
     def run_recurrent(self, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input)
