@@ -25,7 +25,7 @@ def nb_corr(a, b):
     nb_b = nb(b)
     return np.corrcoef(nb_a, nb_b)[0, 1]
 
-def nb(mu, std_scaling=1.0, mu_scaling=0.5, shift=0.02):
+def nb(mu, std_scaling=1.0, mu_scaling=0.75, shift=0.0):
     """ mu is a vector of firing rates. std_scaling is a scalar. """
 
 
@@ -42,8 +42,6 @@ def distance(a, b, maximum):
     dist = min(dist, np.abs(maximum-dist))
     return dist
 
-threshold=0.5
-
 def zero_out_invalid(reconstruct, threshold):
     reconstruct = reconstruct.copy()
     reconstruct_norm = np.linalg.norm(reconstruct, axis=1)
@@ -54,11 +52,14 @@ def zero_out_invalid(reconstruct, threshold):
 
 def recall_plots(
     cache_identification, narrow_recall, wide_recall,
-    cache_states):
+    cache_states, recall_downsampling_idxs=None):
     
     fig, ax = plt.subplots(1, 3, figsize=(8,2))
     num_states, N_bar = cache_identification.shape
     threshold = 0.5
+    if recall_downsampling_idxs is not None:
+        narrow_recall = narrow_recall[:,recall_downsampling_idxs]
+        wide_recall = wide_recall[:,recall_downsampling_idxs]
     
     # Identification plot
     readout = np.linalg.norm(cache_identification, axis=1)
@@ -88,16 +89,17 @@ def recall_plots(
         for i, c in enumerate(cache_states):
             xtick_loc.append(c)
             xtick_label.append(f'C{i+1}')
+        _ax.set_xticks(xtick_loc)
+        _ax.set_xticklabels(xtick_label, fontsize=10)
     for _ax in ax[1:]: # For recalled place fields
         xtick_loc = []; xtick_label = [];
         for i, c in enumerate(cache_states):
-            xtick_loc.append((c/num_states)*N_bar)
+            if recall_downsampling_idxs is not None:
+                xtick_loc.append((c/num_states)*recall_downsampling_idxs.size)
+            else:
+                xtick_loc.append((c/num_states)*N_bar)
             xtick_label.append(f'C{i+1}')
-    try: # Only compatible with updated version of Matplotlib
-        ax[0].set_xticks(xtick_loc, xtick_label, rotation=45, color='red', fontsize=10)
-        ax[1].set_xticks(xtick_loc, xtick_label, rotation=45, color='red', fontsize=10)
-        ax[2].set_xticks(xtick_loc, xtick_label, rotation=45, color='red', fontsize=10)
-    except:
-        pass
+        _ax.set_xticks(xtick_loc)
+        _ax.set_xticklabels(xtick_label, fontsize=10)
     plt.tight_layout()
     plt.show()
