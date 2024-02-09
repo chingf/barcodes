@@ -158,10 +158,11 @@ def run(arg):
     with open(f'{_exp_dir}results.p', 'wb') as f:
         pickle.dump(results, f)
 
-# Run script
-import time
-for arg in args:
-    start = time.time()
-    run(arg)
-    end = time.time()
-    print(f'ELAPSED TIME: {end-start} seconds')
+if __name__ == '__main__':
+    # Run script
+    import time
+    for arg in args:
+        start = time.time()
+        run(arg)
+        end = time.time()
+        print(f'ELAPSED TIME: {end-start} seconds')
