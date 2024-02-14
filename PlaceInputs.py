@@ -20,3 +20,25 @@ class PlaceInputs():
     def get_inputs(self):
         return self.inputs
 
+from numpy.random import multivariate_normal
+class PlaceInputsExp():
+    def __init__(self, N_inp, num_states, decay_constant=0.4):
+        self.N_inp = N_inp
+        self.num_states = num_states
+        self.decay_constant = decay_constant
+
+        mean = np.zeros([num_states])
+        cov = np.zeros([num_states, num_states])
+        for s in range(num_states):
+            for s2 in range(num_states):
+                mindist = min(min(np.abs(s2-s), np.abs(s+num_states-s2)), np.abs(s-num_states-s2))
+                cov[s, s2] = np.exp(-mindist/(decay_constant*num_states))
+
+        inputs = multivariate_normal(mean, cov, size=[N_inp]).transpose()
+        inputs = inputs - np.mean(inputs, axis=1, keepdims=True)
+        inputs = inputs / np.std(inputs, axis=1, keepdims=True)
+
+        self.inputs = inputs
+
+    def get_inputs(self):
+        return self.inputs

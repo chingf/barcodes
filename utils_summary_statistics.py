@@ -30,46 +30,48 @@ def get_resolution_summary_statistics(
 
     num_states = readout.size
     N_inp = N_bar = reconstruct.shape[1]
+    n_caches = len(cache_states)
+    n_noncaches = num_states - n_caches
 
     identification_1 = { # What threshold to binarize at?
         'threshold': [], 'site spacing': [], 'search strength': [],
-        'accuracy': [], 'sensitivity': [], 'specificity': []
+        'accuracy': [], 'sensitivity': [], 'specificity': [], 'n_caches': []
         }
 
     identification_2 = { # What are noncache values b/n cache 1 & 2?
         'site spacing': [], 'search strength': [],
-        'noncache diff': [], 'noncache val': []
+        'noncache diff': [], 'noncache val': [], 'n_caches': []
         }
 
     identification_3 = { # What are noncache vals away from cache locs?
         'site spacing': [], 'search strength': [],
-        'dist from attractor': [], 'val': [],
+        'dist from attractor': [], 'val': [], 'n_caches': []
         }
     
     identification_4 = { # What are vals at each cache??
         'site spacing': [], 'search strength': [],
-        'cache': [], 'val': [],
+        'cache': [], 'val': [], 'n_caches': []
         }
     
     identification_5 = { # What are vals at each cache??
         'site spacing': [], 'search strength': [],
-        'n_caches_correct': [],
+        'n_caches_correct': [], 'n_caches': []
         }
 
     reconstruct_1 = { # Validity
         'p_valid': [], 'search strength': [],
-        'site spacing': [], 'opt attractor dist': []
+        'site spacing': [], 'opt attractor dist': [], 'n_caches': []
         }
 
     reconstruct_2 = { # Conditioned on validity, what is the norm error?
         'norm error': [], 'search strength': [],
         'opt attractor dist': [], 'site spacing': [],
-        'chosen attractor dist': []
+        'chosen attractor dist': [], 'n_caches': []
         }
 
     reconstruct_3 = { # Conditioned on validity, what is the norm error b/n cache 1 & 2?
         'norm error': [], 'search strength': [],
-        'site spacing': [], 'peak error': [],
+        'site spacing': [], 'peak error': [], 'n_caches': []
         }
 
     activations_1 = {
@@ -100,13 +102,14 @@ def get_resolution_summary_statistics(
         _readout = np.digitize(readout, [threshold])
         true_pos = np.sum(_readout[cache_state_idxs])
         true_neg = np.sum(_readout[noncache_state_idxs]==0)
-        acc = (true_pos + true_neg)/100
+        acc = (true_pos + true_neg)/num_states
         identification_1['threshold'].append(threshold)
         identification_1['site spacing'].append(site_spacing)
         identification_1['search strength'].append(search_strength)
         identification_1['accuracy'].append(acc)
-        identification_1['sensitivity'].append(true_pos/3)
-        identification_1['specificity'].append(true_neg/97)
+        identification_1['sensitivity'].append(true_pos/n_caches)
+        identification_1['specificity'].append(true_neg/n_noncaches)
+        identification_1['n_caches'].append(n_caches)
 
     # Identification 2
     c1 = cache_states[0]; c2 = cache_states[1];
@@ -117,36 +120,42 @@ def get_resolution_summary_statistics(
     identification_2['noncache diff'].append(noncache_val-cache_val)
     identification_2['site spacing'].append(site_spacing)
     identification_2['search strength'].append(search_strength)
+    identification_2['n_caches'].append(n_caches)
 
     # Identification 3
     vals = readout[noncache_state_idxs]
-    identification_3['site spacing'].extend([site_spacing]*97)
-    identification_3['search strength'].extend([search_strength]*97)
+    identification_3['site spacing'].extend([site_spacing]*n_noncaches)
+    identification_3['search strength'].extend([search_strength]*n_noncaches)
     identification_3['dist from attractor'].extend(
         list(dist_from_attractor[noncache_state_idxs]))
     identification_3['val'].extend(list(vals))
+    identification_3['n_caches'].extend([n_caches]*n_noncaches)
     
     # Identification 4
     vals = readout[cache_state_idxs]
-    identification_4['site spacing'].extend([site_spacing]*3)
-    identification_4['search strength'].extend([search_strength]*3)
-    identification_4['cache'].extend([1,2,3])
+    identification_4['site spacing'].extend([site_spacing]*n_caches)
+    identification_4['search strength'].extend([search_strength]*n_caches)
+    identification_4['cache'].extend(list(np.arange(n_caches)+1))
     identification_4['val'].extend(list(vals))
+    identification_4['n_caches'].extend([n_caches]*n_caches)
     
-    # Identification 4
+    # Identification 5
     n_caches_correct = np.sum(readout[cache_state_idxs] > 0.5)
     identification_5['site spacing'].append(site_spacing)
     identification_5['search strength'].append(search_strength)
     identification_5['n_caches_correct'].append(n_caches_correct)
+    identification_5['n_caches'].append(n_caches)
 
     # Reconstruction 1
     peak_locs = np.argmax(reconstruct, axis=1)
     peak_locs = (peak_locs/N_inp)*num_states
     valid = np.logical_and(readout>0.5, np.isin(peak_locs, cache_states))
     reconstruct_1['p_valid'].extend(list(valid))
-    reconstruct_1['search strength'].extend([search_strength]*100)
-    reconstruct_1['site spacing'].extend([site_spacing]*100)
+    reconstruct_1['search strength'].extend([search_strength]*num_states)
+    reconstruct_1['site spacing'].extend([site_spacing]*num_states)
     reconstruct_1['opt attractor dist'].extend(list(dist_from_attractor))
+    reconstruct_1['n_caches'].extend([n_caches]*num_states)
+
 
     # Reconstruction 2
     norm_errors = []
@@ -164,6 +173,7 @@ def get_resolution_summary_statistics(
         reconstruct_2['opt attractor dist'].append(dist_from_attractor[idx])
         reconstruct_2['site spacing'].append(site_spacing)
         reconstruct_2['chosen attractor dist'].append(peak_error)
+        reconstruct_2['n_caches'].append(n_caches)
 
     # Reconstruction 3
     nc1 = floor((c1 + c2)/2); nc2 = ceil((c1 + c2)/2);
@@ -173,6 +183,7 @@ def get_resolution_summary_statistics(
     reconstruct_3['peak error'].append(peak_error)
     reconstruct_3['search strength'].append(search_strength)
     reconstruct_3['site spacing'].append(site_spacing)
+    reconstruct_3['n_caches'].append(n_caches)
     
     # Activations 1 and 2
     if search_strength == 0:

@@ -9,7 +9,8 @@ class Model():
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
         lr=40.0, plasticity_bias = -0.35, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
-        forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25
+        forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25,
+        add_pred_skew=False
         ):
 
         self.N_inp = N_inp
@@ -33,6 +34,7 @@ class Model():
         self.forget_readout_lr = forget_readout_lr
         self.forget_lr = forget_lr
         self.forget_plasticity_bias = forget_plasticity_bias
+        self.add_pred_skew = add_pred_skew
         self.reset()
 
     def reset(self):
@@ -42,10 +44,21 @@ class Model():
         self.J_xx += (self.weight_bias / self.N_bar)
         self.J_xx_orig = np.copy(self.J_xx)
         self.J_sx = np.random.randn(self.N_bar)
+
         if self.gaussian_J_ix:
             self.J_ix = np.random.randn(self.N_inp, self.N_bar) / np.sqrt(self.N_inp)
         else:
             self.J_ix = np.eye(self.N_inp)
+
+        if self.add_pred_skew:
+            identity = np.eye(self.N_bar)
+            n_shifts = int(self.N_bar/10.)
+            shift_offset = int(self.N_bar/self.num_states)
+            gamma = 0.99
+            for s in range(1, n_shifts):
+                shifted = np.roll(identity, shift=-(s+shift_offset), axis=0)
+                delta = (gamma**s)*0.04*shifted
+                self.J_xx += delta
 
     def run_nonrecurrent(self, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input, np.zeros(self.J_xx.shape), seed_steps=0)

@@ -7,7 +7,7 @@ import os
 import time
 
 from Model import Model
-from PlaceInputs import PlaceInputs
+from PlaceInputs import PlaceInputs, PlaceInputsExp
 from utils import *
 import configs
 
@@ -47,8 +47,12 @@ elif exp == 'plasticity_bias': # Offset in plasticity update
 N_inp = 5000
 N_bar = 5000
 num_states = 100
+PlaceClass = PlaceInputs
 if model_type == 'default':
     model_params = {}
+    place_input_params = {}
+elif model_type == 'prediction':
+    model_params = {'plasticity_bias': -0.45, 'add_pred_skew': True}
     place_input_params = {}
 elif model_type == 'big':
     model_params = {}
@@ -68,6 +72,13 @@ elif model_type == 'lr_ablation':
 elif model_type == 'place_field_ablation':
     model_params = {}
     place_input_params = {'decay_constant': 0.0001}
+elif model_type == 'gaussian':
+    model_params = {
+        'lr': 75, 'plasticity_bias': -0.32, 'rec_strength': 7.0,
+        'weight_bias': -40, 'divisive_normalization': 30.0, 'seed_strength_cache': 1.5}
+    PlaceClass = PlaceInputsExp
+    place_input_params = {}
+    
 
 # Set up arguments
 for exp_param in exp_params:
@@ -92,7 +103,7 @@ else:
 exp_dir = engram_dir + 'resolution/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
 
-def run(arg):
+def run(arg, exp_dir):
     # Unpack arguments
     params, seed, cache_states, add_to_dir_path  = arg
     _exp_dir = exp_dir + add_to_dir_path
@@ -102,7 +113,7 @@ def run(arg):
         return
 
     # Setup
-    place_inputs = PlaceInputs(N_inp, num_states, **place_input_params).get_inputs()
+    place_inputs = PlaceClass(N_inp, num_states, **place_input_params).get_inputs()
     model = Model(N_inp, N_bar, num_states, **params)
     _, acts, _, _ = model.run_recurrent(place_inputs)
     results = {'initial_acts': acts,}
@@ -120,6 +131,8 @@ def run(arg):
         ax[0].imshow(pairwise_correlations_centered(acts), vmin=0, vmax=1, aspect='auto')
 
         _, wide_acts, wide_reconstruct, _ = model.run_wide_recall(place_inputs)
+        if model_type == 'gaussian':
+            wide_reconstruct = wide_reconstruct@place_inputs.transpose()
         ax[1].set_title("Barcode Activity Correlation,\nfantasy (wide search)")
         ax[1].imshow(pairwise_correlations_centered(wide_acts), vmin=0, vmax=1, aspect='auto')
         ax[2].set_xlabel("Neuron")
@@ -128,6 +141,8 @@ def run(arg):
         ax[2].set_title("Place field reconstruction,\nfantasy (wide search)")
 
         _, narrow_acts, narrow_reconstruct, _ = model.run_narrow_recall(place_inputs)
+        if model_type == 'gaussian':
+            narrow_reconstruct = narrow_reconstruct@place_inputs.transpose()
         ax[3].set_title("Barcode Activity Correlation,\nfantasy (narrow search)")
         ax[3].imshow(pairwise_correlations_centered(narrow_acts), vmin=0, vmax=1, aspect='auto')
         ax[4].set_xlabel("Neuron")
@@ -150,6 +165,8 @@ def run(arg):
     if exp != 'narrow_search_factor':
         for s in param_sweep_search_strengths: 
             _, acts, reconstruct, _ = model.run_recall(s, place_inputs)
+            if model_type == 'gaussian':
+                reconstruct = reconstruct@place_inputs.transpose()
             results[f'{s:.2f}_acts'] = acts
             results[f'{s:.2f}_reconstruct'] = reconstruct
 
@@ -163,6 +180,6 @@ if __name__ == '__main__':
     import time
     for arg in args:
         start = time.time()
-        run(arg)
+        run(arg, exp_dir)
         end = time.time()
         print(f'ELAPSED TIME: {end-start} seconds')

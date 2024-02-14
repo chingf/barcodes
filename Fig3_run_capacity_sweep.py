@@ -17,15 +17,16 @@ from Fig3_run_resolution_sweep import * # Bulk of script is here
 exp_dir = engram_dir + 'capacity/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
 args = []
-param_sweep_search_strengths = [0., 0.2, 0.4, 0.6, 0.8]
+param_sweep_search_strengths = [0.]
 if exp == 'narrow_search_factor':
     exp_params = []
     for v in param_sweep_search_strengths:
         exp_params.append({exp: v})
 for exp_param in exp_params:
     for seed in range(n_seeds):
-        for spacing in [15]:
-            for n_caches in np.arange(1,7):
+        for spacing in [5, 10]: #15
+            max_caches = int(num_states//spacing)
+            for n_caches in np.arange(1,max_caches+1):
                 params = model_params.copy()
                 for key in exp_param.keys():
                     params[key] = exp_param[key]
@@ -41,6 +42,6 @@ if __name__ == '__main__':
     import time
     for arg in args:
         start = time.time()
-        run(arg)
+        run(arg, exp_dir)
         end = time.time()
         print(f'ELAPSED TIME: {end-start} seconds')
