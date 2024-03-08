@@ -4,6 +4,8 @@ import numpy as np
 fig_width = 6.4
 fig_height = 4.8
 
+n_states_per_site = 10
+
 import seaborn as sns
 sns.set(
         font_scale=14/12., #default size is 12pt, scale to 16pt
