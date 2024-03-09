@@ -20,6 +20,31 @@ class PlaceInputs():
     def get_inputs(self):
         return self.inputs
 
+class PlaceInputs2D():
+    def __init__(self, N_inp, num_states, decay_constant=0.2):
+        arena_width = int(np.sqrt(num_states))
+        if N_inp % arena_width != 0:
+            raise ValueError('Ensure N_inp is consistent with arena width')
+        print(f'Place inputs generated from arena with width {arena_width}')
+        self.N_inp = N_inp
+        self.num_states = num_states
+        self.arena_width = arena_width
+        self.decay_constant = decay_constant
+        N_inp_sqrt = int(np.sqrt(N_inp))
+
+        inputs = np.zeros([num_states, N_inp])
+        for s in range(num_states):
+            peak = int(s / float(num_states) * N_inp)
+            for n in range(N_inp):
+                dist = distance2D(n, peak, N_inp_sqrt)
+                inputs[s, n] = np.exp(-(dist/(N_inp*decay_constant)))
+        inputs = inputs - np.mean(inputs, axis=1, keepdims=True)
+        inputs = inputs / np.std(inputs, axis=1, keepdims=True)
+        self.inputs = inputs
+
+    def get_inputs(self):
+        return self.inputs
+
 from numpy.random import multivariate_normal
 class PlaceInputsExp():
     def __init__(self, N_inp, num_states, decay_constant=0.4):

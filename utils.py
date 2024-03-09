@@ -37,6 +37,13 @@ def nb(mu, std_scaling=1.0, mu_scaling=0.75, shift=0.0):
     nb_mu = nbinom.rvs(n, p)
     return nb_mu.astype(float)
 
+def distance2D(a, b, arena_width):
+    a_x = a // arena_width; a_y = a % arena_width;
+    b_x = b // arena_width; b_y = b % arena_width;
+    x_dist = max(a_x, b_x) - min(a_x, b_x)
+    y_dist = max(a_y, b_y) - min(a_y, b_y)
+    return np.linalg.norm([x_dist, y_dist])
+
 def distance(a, b, maximum):
     dist = np.abs(a - b)
     dist = min(dist, np.abs(maximum-dist))
