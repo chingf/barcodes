@@ -5,7 +5,7 @@ import warnings
 class Model():
     def __init__(self,
         N_inp, N_bar, num_states,
-        rec_strength=7.0, weight_bias=-40, gaussian_J_ix=False, # Initial weights
+        weight_var=7.0, weight_bias=-40, gaussian_J_ix=False, # Initial weights
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
         lr=40.0, plasticity_bias = -0.35, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
@@ -20,7 +20,7 @@ class Model():
             gaussian_J_ix = True
         self.gaussian_J_ix = gaussian_J_ix
         self.num_states = num_states
-        self.rec_strength = rec_strength
+        self.weight_var = weight_var
         self.weight_bias = weight_bias
         self.divisive_normalization = divisive_normalization
         self.steps = steps
@@ -40,7 +40,7 @@ class Model():
     def reset(self):
         self.J_xy = np.zeros([self.N_inp, self.N_bar])
         rand_J = np.random.randn(self.N_bar, self.N_bar)
-        self.J_xx = self.rec_strength*(rand_J / np.sqrt(self.N_bar))
+        self.J_xx = self.weight_var*(rand_J / np.sqrt(self.N_bar))
         self.J_xx += (self.weight_bias / self.N_bar)
         self.J_xx_orig = np.copy(self.J_xx)
         self.J_sx = np.random.randn(self.N_bar)
@@ -62,12 +62,9 @@ class Model():
 
     def run_nonrecurrent(self, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input, np.zeros(self.J_xx.shape), seed_steps=0)
-    
-    def run_recurrent_r(self, inputs, r, n_zero_input=0):
-        return self.run(inputs, n_zero_input, r*self.J_xx, seed_steps=0)
 
-    def run_recurrent(self, inputs, n_zero_input=0):
-        return self.run(inputs, n_zero_input)
+    def run_recurrent(self, inputs, n_zero_input=0, rec_strength=1.):
+        return self.run(inputs, n_zero_input, rec_strength=rec_strength)
 
     def run_wide_recall(self, inputs, n_zero_input=0):
         return self.run_recall(self.wide_search_factor, inputs, n_zero_input)
@@ -75,10 +72,16 @@ class Model():
     def run_narrow_recall(self, inputs, n_zero_input=0):
         return self.run_recall(self.narrow_search_factor, inputs, n_zero_input)
 
-    def run_recall(self, search_factor, inputs, n_zero_input=0):
-        return self.run(inputs, n_zero_input, seed_steps=0, search_factor=search_factor)
+    def run_recall(self, search_factor, inputs, n_zero_input=0, rec_strength=1.):
+        return self.run(
+            inputs, n_zero_input, rec_strength=rec_strength,
+            seed_steps=0, search_factor=search_factor)
 
-    def run(self, raw_inputs, n_zero_input=0, J_xx=None, seed_steps = None, search_factor=0.0):
+    def run(
+        self, raw_inputs, n_zero_input=0,
+        J_xx=None, rec_strength=1.,
+        seed_steps = None, search_factor=0.0):
+        
         if seed_steps is None:
             seed_steps=self.seed_steps
             
@@ -89,6 +92,7 @@ class Model():
         seed_strength_cache=self.seed_strength_cache;
         if J_xx is None:
             J_xx = self.J_xx
+        J_xx = J_xx * rec_strength
 
         preacts = np.zeros([num_states, N_bar])
         acts = np.zeros([num_states, N_bar])

@@ -22,7 +22,7 @@ param_sweep_search_strengths = [0., 0.2, 0.4, 0.6, 0.8, 1., 1.5, 2.0]
 if exp == 'narrow_search_factor': # Just vary search strength
     for v in param_sweep_search_strengths:
         exp_params.append({exp: v})
-elif exp == 'rec_strength': # Strength of recurrent dynamics
+elif exp == 'weight_var': # Strength of recurrent dynamics
     for v in [0, 3, 5, 7, 9, 11, 13, 15]:
         exp_params.append({exp: v})
 elif exp == 'weight_bias': # Offset in initial weights of J_xx

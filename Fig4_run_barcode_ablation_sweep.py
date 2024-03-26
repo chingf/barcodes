@@ -13,7 +13,7 @@ import configs
 
 # Determine experiment
 n_seeds = 15
-params = {'rec_strength': 0.0, 'weight_bias': 0.}
+params = {'weight_var': 0.0, 'weight_bias': 0.}
 
 # Fixed parameters
 N_inp = 2000
