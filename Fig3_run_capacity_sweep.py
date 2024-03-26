@@ -24,7 +24,7 @@ if exp == 'narrow_search_factor':
         exp_params.append({exp: v})
 for exp_param in exp_params:
     for seed in range(n_seeds):
-        for spacing in [5, 10]: #15
+        for spacing in [5, 7, 10, 12, 15, 16, 18, 20]:
             max_caches = int(num_states//spacing)
             for n_caches in np.arange(1,max_caches+1):
                 params = model_params.copy()
