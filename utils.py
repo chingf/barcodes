@@ -59,9 +59,9 @@ def zero_out_invalid(reconstruct, threshold):
 
 def recall_plots(
     cache_identification, narrow_recall, wide_recall,
-    cache_states, recall_downsampling_idxs=None):
+    cache_states, recall_downsampling_idxs=None, figsize=(8,2)):
     
-    fig, ax = plt.subplots(1, 3, figsize=(8,2))
+    fig, ax = plt.subplots(1, 3, figsize=figsize)
     num_states, N_bar = cache_identification.shape
     threshold = 0.5
     if recall_downsampling_idxs is not None:

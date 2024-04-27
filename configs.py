@@ -8,7 +8,7 @@ n_states_per_site = 10
 
 import seaborn as sns
 sns.set(
-        font_scale=14/12., #default size is 12pt, scale to 16pt
+        font_scale=8/12., #default size is 12pt
         palette='colorblind', #'Set1',
         rc={'axes.axisbelow': True,
             'axes.edgecolor': 'lightgrey',
@@ -23,8 +23,8 @@ sns.set(
             'lines.linewidth': 1,
             'legend.facecolor': 'white',
             'legend.framealpha':0.8,
-            'legend.fontsize':8,
-            'legend.title_fontsize':8,
+            'legend.fontsize':6,
+            'legend.title_fontsize':6,
 
             'xtick.bottom': True,
             'xtick.color': 'dimgrey',

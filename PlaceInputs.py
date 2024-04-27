@@ -13,8 +13,15 @@ class PlaceInputs():
             for n in range(N_inp):
                 dist = distance(n, peak, N_inp)
                 inputs[s, n] = np.exp(-(dist/(N_inp*decay_constant)))
-        inputs = inputs - np.mean(inputs, axis=1, keepdims=True)
-        inputs = inputs / np.std(inputs, axis=1, keepdims=True)
+        if N_inp > 5000:
+            offset = (N_inp - 5000)//2
+            mean = np.mean(inputs[:,offset:-offset], axis=1, keepdims=True)
+            std = np.std(inputs[:,offset:-offset], axis=1, keepdims=True)
+        else:
+            mean = np.mean(inputs, axis=1, keepdims=True)
+            std = np.std(inputs, axis=1, keepdims=True)
+        inputs = inputs - mean
+        inputs = inputs / std
         self.inputs = inputs
 
     def get_inputs(self):

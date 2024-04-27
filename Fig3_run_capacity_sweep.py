@@ -14,7 +14,15 @@ import configs
 from Fig3_run_resolution_sweep import * # Bulk of script is here
 
 # Re-define arguments for capacity test
-exp_dir = engram_dir + 'capacity/' + exp + '/' + model_type + '/'
+doublesize = True
+if doublesize:
+    N_inp = 5000
+    N_bar = 5000
+    num_states = 100
+
+exp_dir = engram_dir + 'capacity'
+if doublesize: exp_dir += '_doublesize'
+exp_dir += '/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
 args = []
 param_sweep_search_strengths = [0.]

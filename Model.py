@@ -63,8 +63,8 @@ class Model():
     def run_nonrecurrent(self, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input, np.zeros(self.J_xx.shape), seed_steps=0)
 
-    def run_recurrent(self, inputs, n_zero_input=0, rec_strength=1.):
-        return self.run(inputs, n_zero_input, rec_strength=rec_strength)
+    def run_recurrent(self, inputs, n_zero_input=0, rec_strength=1., seed_steps=None):
+        return self.run(inputs, n_zero_input, rec_strength=rec_strength, seed_steps=seed_steps)
 
     def run_wide_recall(self, inputs, n_zero_input=0):
         return self.run_recall(self.wide_search_factor, inputs, n_zero_input)
