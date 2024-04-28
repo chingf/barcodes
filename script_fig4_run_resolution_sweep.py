@@ -62,8 +62,8 @@ elif model_type == 'big':
     N_inp *= 3; N_bar *= 3
     n_seeds = 10
 elif model_type == 'barcode_ablation':
-    model_params = {'rec_strength': 0.0, 'weight_bias': 0.}
-    if exp == 'rec_strength':
+    model_params = {'weight_var': 0.0, 'weight_bias': 0.}
+    if exp == 'weight_var':
         raise ValueError('Incompatable parameter sweep + model setting')
     place_input_params = {}
 elif model_type == 'lr_ablation':
@@ -76,7 +76,7 @@ elif model_type == 'place_field_ablation':
     place_input_params = {'decay_constant': 0.0001}
 elif model_type == 'gaussian':
     model_params = {
-        'lr': 75, 'plasticity_bias': -0.32, 'rec_strength': 7.0,
+        'lr': 75, 'plasticity_bias': -0.32, 'weight_var': 7.0,
         'weight_bias': -40, 'divisive_normalization': 30.0, 'seed_strength_cache': 1.5}
     PlaceClass = PlaceInputsExp
     place_input_params = {}

@@ -42,36 +42,15 @@ def get_resolution_summary_statistics(
         'site spacing': [], 'search strength': [],
         'noncache diff': [], 'noncache val': [], 'n_caches': []
         }
-
-    identification_3 = { # What are noncache vals away from cache locs?
-        'site spacing': [], 'search strength': [],
-        'dist from attractor': [], 'val': [], 'n_caches': []
-        }
     
-    identification_4 = { # What are vals at each cache??
-        'site spacing': [], 'search strength': [],
-        'cache': [], 'val': [], 'n_caches': []
-        }
-    
-    identification_5 = { # What are vals at each cache??
-        'site spacing': [], 'search strength': [],
-        'n_caches_correct': [], 'n_caches': []
+    reconstruct_1 = { # Did you get the closest peak?
+        'correct': [], 'search strength': [],
+        'site spacing': [], 'distance from closest cache': [], 'n_caches': []
         }
 
-    reconstruct_1 = { # Validity
-        'p_valid': [], 'search strength': [],
-        'site spacing': [], 'opt attractor dist': [], 'n_caches': []
-        }
-
-    reconstruct_2 = { # Conditioned on validity, what is the norm error?
+    reconstruct_2 = { # Conditioned on getting the closest peak, what is the norm error?
         'norm error': [], 'search strength': [],
-        'opt attractor dist': [], 'site spacing': [],
-        'chosen attractor dist': [], 'n_caches': []
-        }
-
-    reconstruct_3 = { # Conditioned on validity, what is the norm error b/n cache 1 & 2?
-        'norm error': [], 'search strength': [],
-        'site spacing': [], 'peak error': [], 'n_caches': []
+        'distance from closest cache': [], 'site spacing': [], 'n_caches': []
         }
 
     activations_1 = {
@@ -84,10 +63,8 @@ def get_resolution_summary_statistics(
     
     summary_stats = {
         'identification_1': identification_1, 'identification_2': identification_2,
-        'identification_3': identification_3, 'identification_4': identification_4,
-        'identification_5': identification_5,
         'reconstruct_1': reconstruct_1, 'reconstruct_2': reconstruct_2,
-        'reconstruct_3': reconstruct_3, 'activations_1': activations_1
+        'activations_1': activations_1, 'activations_2': activations_2
         }
     
     cache_state_idxs = np.zeros(readout.size).astype(bool)
@@ -122,68 +99,37 @@ def get_resolution_summary_statistics(
     identification_2['search strength'].append(search_strength)
     identification_2['n_caches'].append(n_caches)
 
-    # Identification 3
-    vals = readout[noncache_state_idxs]
-    identification_3['site spacing'].extend([site_spacing]*n_noncaches)
-    identification_3['search strength'].extend([search_strength]*n_noncaches)
-    identification_3['dist from attractor'].extend(
-        list(dist_from_attractor[noncache_state_idxs]))
-    identification_3['val'].extend(list(vals))
-    identification_3['n_caches'].extend([n_caches]*n_noncaches)
-    
-    # Identification 4
-    vals = readout[cache_state_idxs]
-    identification_4['site spacing'].extend([site_spacing]*n_caches)
-    identification_4['search strength'].extend([search_strength]*n_caches)
-    identification_4['cache'].extend(list(np.arange(n_caches)+1))
-    identification_4['val'].extend(list(vals))
-    identification_4['n_caches'].extend([n_caches]*n_caches)
-    
-    # Identification 5
-    n_caches_correct = np.sum(readout[cache_state_idxs] > 0.5)
-    identification_5['site spacing'].append(site_spacing)
-    identification_5['search strength'].append(search_strength)
-    identification_5['n_caches_correct'].append(n_caches_correct)
-    identification_5['n_caches'].append(n_caches)
-
     # Reconstruction 1
     peak_locs = np.argmax(reconstruct, axis=1)
     peak_locs = (peak_locs/N_inp)*num_states
-    valid = np.logical_and(readout>0.5, np.isin(peak_locs, cache_states))
-    reconstruct_1['p_valid'].extend(list(valid))
+    is_valid = np.logical_and(readout>0.5, np.isin(peak_locs, cache_states))
+    is_closest = []
+    for idx in range(num_states):
+        if not is_valid[idx]:
+            is_closest.append(False)
+            continue
+        dist_from_chosen_cache = distance(idx, peak_locs[idx], num_states)
+        dist_from_closest_cache = np.min(
+            [distance(peak_locs[idx], c, num_states) for c in cache_states])
+        is_closest.append(dist_from_chosen_cache == dist_from_closest_cache)
+    reconstruct_1['correct'].extend(is_closest)
     reconstruct_1['search strength'].extend([search_strength]*num_states)
     reconstruct_1['site spacing'].extend([site_spacing]*num_states)
-    reconstruct_1['opt attractor dist'].extend(list(dist_from_attractor))
+    reconstruct_1['distance from closest cache'].extend(list(dist_from_attractor))
     reconstruct_1['n_caches'].extend([n_caches]*num_states)
 
 
     # Reconstruction 2
-    norm_errors = []
-    peak_errors = []
     for idx in range(num_states):
+        if not is_closest[idx]: continue
         r = reconstruct[idx]/reconstruct[idx].max()
         norm_error = [np.linalg.norm(r - inputs[s]/inputs[s].max()) for s in dist_states[idx]]
-        peak_error = [distance(peak_locs[idx], s, num_states) for s in dist_states[idx]]
-        norm_error = min(norm_error); peak_error = min(peak_error)
-        norm_errors.append(norm_error)
-        peak_errors.append(peak_error)
-        if not valid[idx]: continue
+        norm_error = min(norm_error)
         reconstruct_2['norm error'].append(norm_error)
         reconstruct_2['search strength'].append(search_strength)
-        reconstruct_2['opt attractor dist'].append(dist_from_attractor[idx])
+        reconstruct_2['distance from closest cache'].append(dist_from_attractor[idx])
         reconstruct_2['site spacing'].append(site_spacing)
-        reconstruct_2['chosen attractor dist'].append(peak_error)
         reconstruct_2['n_caches'].append(n_caches)
-
-    # Reconstruction 3
-    nc1 = floor((c1 + c2)/2); nc2 = ceil((c1 + c2)/2);
-    norm_error = (norm_errors[nc1] + norm_errors[nc2])/2
-    peak_error = (peak_errors[nc1] + peak_errors[nc2])/2
-    reconstruct_3['norm error'].append(norm_error)
-    reconstruct_3['peak error'].append(peak_error)
-    reconstruct_3['search strength'].append(search_strength)
-    reconstruct_3['site spacing'].append(site_spacing)
-    reconstruct_3['n_caches'].append(n_caches)
     
     # Activations 1 and 2
     if search_strength == 0:

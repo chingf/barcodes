@@ -11,7 +11,7 @@ from PlaceInputs import PlaceInputs
 from utils import *
 import configs
 
-from Fig3_run_resolution_sweep import * # Bulk of script is here
+from script_fig4_run_resolution_sweep import * # Bulk of script is here
 
 # Re-define arguments for capacity test
 doublesize = True
