@@ -11,6 +11,8 @@ from PlaceInputs import PlaceInputs, PlaceInputsExp
 from utils import *
 import configs
 
+n_cpu_jobs = 40
+
 # Determine experiment
 exp = sys.argv[1]
 model_type = sys.argv[2]
@@ -95,15 +97,18 @@ for exp_param in exp_params:
 
 # Make directories
 if os.environ['USER'] == 'chingfang':
-    engram_dir = '/Volumes/aronov-locker/Ching/barcodes/' # Local Path
+    engram_dir = '/Volumes/aronov-locker/Ching/barcodes2/' # Local Path
 elif 'SLURM_JOBID' in os.environ.keys():
-    engram_dir = '/mnt/smb/locker/aronov-locker/Ching/barcodes/' # Axon Path
+    engram_dir = '/mnt/smb/locker/aronov-locker/Ching/barcodes2/' # Axon Path
 else:
-    engram_dir = '/home/cf2794/engram/Ching/barcodes/' # Cortex Path
+    engram_dir = '/home/cf2794/engram/Ching/barcodes2/' # Cortex Path
 exp_dir = engram_dir + 'resolution/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
 
-def run(arg, exp_dir):
+def cpu_parallel():
+    job_results = Parallel(n_jobs=n_cpu_jobs)(delayed(run)(arg) for arg in args)
+
+def run(arg):
     # Unpack arguments
     params, seed, cache_states, add_to_dir_path  = arg
     _exp_dir = exp_dir + add_to_dir_path
@@ -126,11 +131,13 @@ def run(arg, exp_dir):
         model.update(place_inputs[cache_state], acts[cache_state], preacts[cache_state])
         results['J_xx'] = model.J_xx
        
-        _, acts, _, _ = model.run_recurrent(place_inputs)
+        _, acts, outputs, _ = model.run_recall(0., place_inputs)
+        seed_reconstruct = outputs[1]
         ax[0].set_title("Barcode Activity Correlation,\nfantasy OFF")
         ax[0].imshow(pairwise_correlations_centered(acts), vmin=0, vmax=1, aspect='auto')
 
-        _, wide_acts, wide_reconstruct, _ = model.run_wide_recall(place_inputs)
+        _, wide_acts, outputs, _ = model.run_wide_recall(place_inputs)
+        wide_reconstruct = outputs[0]
         if model_type == 'gaussian':
             wide_reconstruct = wide_reconstruct@place_inputs.transpose()
         ax[1].set_title("Barcode Activity Correlation,\nfantasy (wide search)")
@@ -140,7 +147,8 @@ def run(arg, exp_dir):
         ax[2].imshow(wide_reconstruct, aspect='auto')
         ax[2].set_title("Place field reconstruction,\nfantasy (wide search)")
 
-        _, narrow_acts, narrow_reconstruct, _ = model.run_narrow_recall(place_inputs)
+        _, narrow_acts, outputs, _ = model.run_narrow_recall(place_inputs)
+        narrow_reconstruct = outputs[0]
         if model_type == 'gaussian':
             narrow_reconstruct = narrow_reconstruct@place_inputs.transpose()
         ax[3].set_title("Barcode Activity Correlation,\nfantasy (narrow search)")
@@ -161,14 +169,17 @@ def run(arg, exp_dir):
             results['wide_reconstruct'] = wide_reconstruct
             results['narrow_acts'] = narrow_acts
             results['narrow_reconstruct'] = narrow_reconstruct
+            results['seed_reconstruct'] = seed_reconstruct
 
     if exp != 'narrow_search_factor':
         for s in param_sweep_search_strengths: 
-            _, acts, reconstruct, _ = model.run_recall(s, place_inputs)
+            _, acts, outputs, _ = model.run_recall(s, place_inputs)
+            reconstruct, seed_reconstruct = outputs
             if model_type == 'gaussian':
                 reconstruct = reconstruct@place_inputs.transpose()
             results[f'{s:.2f}_acts'] = acts
             results[f'{s:.2f}_reconstruct'] = reconstruct
+            results[f'{s:.2f}_seed_reconstruct'] = seed_reconstruct
 
     # Save data structures
     plt.close('all')
@@ -178,8 +189,13 @@ def run(arg, exp_dir):
 if __name__ == '__main__':
     # Run script
     import time
-    for arg in args:
-        start = time.time()
-        run(arg, exp_dir)
-        end = time.time()
-        print(f'ELAPSED TIME: {end-start} seconds')
+    start = time.time()
+    cpu_parallel()
+    end = time.time()
+    print(f'ELAPSED TIME: {end-start} seconds')
+
+    #for arg in args:
+    #    start = time.time()
+    #    run(arg)
+    #    end = time.time()
+    #    print(f'ELAPSED TIME: {end-start} seconds')

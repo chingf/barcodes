@@ -7,7 +7,7 @@ class Model():
         N_inp, N_bar, num_states,
         weight_var=7.0, weight_bias=-40, gaussian_J_ix=False, # Initial weights
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
-        lr=40.0, plasticity_bias = -0.35, # Learning
+        lr=40.0, plasticity_bias = -0.38, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
         forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25,
         add_pred_skew=False
@@ -39,6 +39,7 @@ class Model():
 
     def reset(self):
         self.J_xy = np.zeros([self.N_inp, self.N_bar])
+        self.J_xs = np.zeros([1, self.N_bar])
         rand_J = np.random.randn(self.N_bar, self.N_bar)
         self.J_xx = self.weight_var*(rand_J / np.sqrt(self.N_bar))
         self.J_xx += (self.weight_bias / self.N_bar)
@@ -113,17 +114,21 @@ class Model():
             preacts = preacts*(1-divisive_normalization*np.sum(acts, axis=1, keepdims=True)/N_bar*dt) + dt*np.matmul(acts, J_xx)
             acts = relu(preacts)
             acts_over_time[steps+seed_steps+s] = acts.copy()
-        final_output = np.matmul(final_acts, self.J_xy.transpose())
-        return final_preacts, final_acts, final_output, acts_over_time
+        final_output = np.matmul(final_acts, self.J_xy.transpose()) # place field
+        final_output_s = np.matmul(final_acts, self.J_xs.transpose()) # seed
+        final_outputs = (final_output, final_output_s)
+        return final_preacts, final_acts, final_outputs, acts_over_time
 
     def update(self, inputs, act, preact):
         self.J_xy += np.outer(inputs, act)
+        self.J_xs += np.outer(np.ones((1,1)), act)
         act = act.reshape((1, -1))
         preact = preact.reshape((1, -1))
         delta_J = np.matmul(act.transpose()+self.plasticity_bias, act)
         self.J_xx += self.lr * delta_J / self.N_bar
    
     def reverse_update(self, act):
+        """ deprecated. used during forgetting experiments. """
         recon = np.dot(self.J_xy, act)
         self.J_xy -= self.forget_readout_lr * np.outer(recon, act) / self.N_bar
         act = act.reshape((1, -1))
