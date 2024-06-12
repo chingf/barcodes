@@ -7,7 +7,7 @@ class Model():
         N_inp, N_bar, num_states,
         weight_var=7.0, weight_bias=-40, gaussian_J_ix=False, # Initial weights
         divisive_normalization=20.0, steps=100, seed_steps = 5, dt=0.1, # Dynamics
-        lr=40.0, plasticity_bias = -0.38, # Learning
+        lr=40.0, plasticity_bias = -0.35, # Learning
         narrow_search_factor=0.0, wide_search_factor=0.7, seed_strength_cache=3.0,
         forget_readout_lr=0.25, forget_lr=3.5, forget_plasticity_bias=-2.25,
         add_pred_skew=False
@@ -52,14 +52,10 @@ class Model():
             self.J_ix = np.eye(self.N_inp)
 
         if self.add_pred_skew:
-            identity = np.eye(self.N_bar)
-            n_shifts = int(self.N_bar/10.)
-            shift_offset = int(self.N_bar/self.num_states)
-            gamma = 0.99
-            for s in range(1, n_shifts):
-                shifted = np.roll(identity, shift=-(s+shift_offset), axis=0)
-                delta = (gamma**s)*0.04*shifted
-                self.J_xx += delta
+            import pickle
+            with open('pickles/fig6_pred_matrix.p', 'rb') as f:
+                total_delta = pickle.load(f)
+            self.J_xx += total_delta
 
     def run_nonrecurrent(self, inputs, n_zero_input=0):
         return self.run(inputs, n_zero_input, np.zeros(self.J_xx.shape), seed_steps=0)

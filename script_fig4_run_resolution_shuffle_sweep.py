@@ -11,7 +11,12 @@ from PlaceInputs import PlaceInputs
 from utils import *
 import configs
 
-from Fig3_run_resolution_sweep import * # Bulk of script is here
+from script_fig4_run_resolution_sweep import * # Bulk of script is here
+
+
+# Redefine experiment dir
+exp_dir = engram_dir + 'resolution_shuffle/' + exp + '/' + model_type + '/'
+os.makedirs(exp_dir, exist_ok=True)
 
 # Set up arguments, with shuffling
 np.random.seed(0)
@@ -28,18 +33,20 @@ for exp_param in exp_params:
             print(cache_states)
             args.append([
                 params, seed, cache_states,
-                f'{exp_param[exp]:.1f}/res{resolution}/seed{seed}/'
+                f'{exp_param[exp]:.1f}/res{resolution}/seed{seed}/', exp_dir
                 ])
 
-# Redefine experiment dir
-exp_dir = engram_dir + 'resolution_shuffle/' + exp + '/' + model_type + '/'
-os.makedirs(exp_dir, exist_ok=True)
 
 if __name__ == '__main__':
     # Run script
     import time
-    for arg in args:
-        start = time.time()
-        run(arg, exp_dir)
-        end = time.time()
-        print(f'ELAPSED TIME: {end-start} seconds')
+    start = time.time()
+    cpu_parallel(args)
+    end = time.time()
+    print(f'ELAPSED TIME: {end-start} seconds')
+
+    #for arg in args:
+    #    start = time.time()
+    #    run(arg)
+    #    end = time.time()
+    #    print(f'ELAPSED TIME: {end-start} seconds')

@@ -42,10 +42,16 @@ def get_resolution_summary_statistics(
         'site spacing': [], 'search strength': [],
         'noncache diff': [], 'noncache val': [], 'n_caches': []
         }
+
+    identification_3 = { # What are vals at each cache??
+        'site spacing': [], 'search strength': [],
+        'cache': [], 'val': [], 'n_caches': []
+        }   
     
     reconstruct_1 = { # Did you get the closest peak?
-        'correct': [], 'search strength': [],
-        'site spacing': [], 'distance from closest cache': [], 'n_caches': []
+        'is_cache': [], 'high_readout': [], 'is_closest': [],
+        'site spacing': [], 'distance from closest cache': [], 'n_caches': [],
+        'search strength': []
         }
 
     reconstruct_2 = { # Conditioned on getting the closest peak, what is the norm error?
@@ -63,6 +69,7 @@ def get_resolution_summary_statistics(
     
     summary_stats = {
         'identification_1': identification_1, 'identification_2': identification_2,
+        'identification_3': identification_3,
         'reconstruct_1': reconstruct_1, 'reconstruct_2': reconstruct_2,
         'activations_1': activations_1, 'activations_2': activations_2
         }
@@ -98,26 +105,32 @@ def get_resolution_summary_statistics(
     identification_2['site spacing'].append(site_spacing)
     identification_2['search strength'].append(search_strength)
     identification_2['n_caches'].append(n_caches)
-
+    
+    # Identification 3
+    vals = readout[cache_state_idxs]
+    identification_3['site spacing'].extend([site_spacing]*n_caches)
+    identification_3['search strength'].extend([search_strength]*n_caches)
+    identification_3['cache'].extend(list(np.arange(n_caches)+1))
+    identification_3['val'].extend(list(vals))
+    identification_3['n_caches'].extend([n_caches]*n_caches)    
+    
     # Reconstruction 1
     peak_locs = np.argmax(reconstruct, axis=1)
     peak_locs = (peak_locs/N_inp)*num_states
-    is_valid = np.logical_and(readout>0.5, np.isin(peak_locs, cache_states))
+    is_cache = np.isin(peak_locs, cache_states).tolist()
+    high_readout = (readout > 0.5).tolist()
     is_closest = []
     for idx in range(num_states):
-        if not is_valid[idx]:
-            is_closest.append(False)
-            continue
-        dist_from_chosen_cache = distance(idx, peak_locs[idx], num_states)
-        dist_from_closest_cache = np.min(
-            [distance(peak_locs[idx], c, num_states) for c in cache_states])
-        is_closest.append(dist_from_chosen_cache == dist_from_closest_cache)
-    reconstruct_1['correct'].extend(is_closest)
+        dist_from_chosen = distance(idx, peak_locs[idx], num_states)
+        closest = dist_from_chosen == dist_from_attractor[idx]
+        is_closest.append(closest and is_cache[idx])
+    reconstruct_1['is_cache'].extend(is_cache)
+    reconstruct_1['high_readout'].extend(high_readout)
+    reconstruct_1['is_closest'].extend(is_closest)
     reconstruct_1['search strength'].extend([search_strength]*num_states)
     reconstruct_1['site spacing'].extend([site_spacing]*num_states)
-    reconstruct_1['distance from closest cache'].extend(list(dist_from_attractor))
+    reconstruct_1['distance from closest cache'].extend(dist_from_attractor)
     reconstruct_1['n_caches'].extend([n_caches]*num_states)
-
 
     # Reconstruction 2
     for idx in range(num_states):

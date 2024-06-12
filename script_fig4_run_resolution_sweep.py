@@ -16,7 +16,7 @@ n_cpu_jobs = 40
 # Determine experiment
 exp = sys.argv[1]
 model_type = sys.argv[2]
-n_seeds = 20
+n_seeds = 35
 args = []
 
 exp_params = []
@@ -34,16 +34,8 @@ elif exp == 'divisive_normalization': # Strength of dynamics normalization
     for v in [15, 30, 45, 60]:
         exp_params.append({exp: v})
 elif exp == 'plasticity_bias': # Offset in plasticity update
-    for v in [0, -0.1, -0.2, -0.3, -0.4, -0.6, -0.7, -0.8, -0.9, -1.0]:
-        if v >= -0.2: 
-            lr = 10
-        elif v >= -0.4:
-            lr = 20
-        elif v >= -0.5:
-            lr = 30
-        else:
-            lr = 50
-        exp_params.append({exp: v, 'lr': lr})
+    for v in np.linspace(-0.4, -0.2, num=15).round(2):
+        exp_params.append({exp: v})
 
 # Fixed parameters
 N_inp = 5000
@@ -54,7 +46,7 @@ if model_type == 'default':
     model_params = {}
     place_input_params = {}
 elif model_type == 'prediction':
-    model_params = {'plasticity_bias': -0.45, 'add_pred_skew': True}
+    model_params = {'add_pred_skew': True}
     place_input_params = {}
 elif model_type == 'big':
     model_params = {}
@@ -80,20 +72,7 @@ elif model_type == 'gaussian':
         'weight_bias': -40, 'divisive_normalization': 30.0, 'seed_strength_cache': 1.5}
     PlaceClass = PlaceInputsExp
     place_input_params = {}
-    
 
-# Set up arguments
-for exp_param in exp_params:
-    for seed in range(n_seeds):
-        for resolution in [3, 5, 10, 15, 20, 25, 30]:
-            params = model_params.copy()
-            for key in exp_param.keys():
-                params[key] = exp_param[key]
-            cache_states = [0, resolution, 66]
-            args.append([
-                params, seed, cache_states,
-                f'{exp_param[exp]:.1f}/res{resolution}/seed{seed}/'
-                ])
 
 # Make directories
 if os.environ['USER'] == 'chingfang':
@@ -105,12 +84,29 @@ else:
 exp_dir = engram_dir + 'resolution/' + exp + '/' + model_type + '/'
 os.makedirs(exp_dir, exist_ok=True)
 
-def cpu_parallel():
+# Set up arguments
+for exp_param in exp_params:
+    for seed in range(n_seeds):
+        for resolution in [3, 5, 10, 15, 20, 25, 30]:
+            params = model_params.copy()
+            for key in exp_param.keys():
+                params[key] = exp_param[key]
+            cache_states = [0, resolution, 66]
+            if exp == 'plasticity_bias':
+                param_val_string = f'{exp_param[exp]:.2f}'
+            else:
+                param_val_string = f'{exp_param[exp]:.1f}'
+            args.append([
+                params, seed, cache_states,
+                f'{param_val_string}/res{resolution}/seed{seed}/', exp_dir])
+
+
+def cpu_parallel(args):
     job_results = Parallel(n_jobs=n_cpu_jobs)(delayed(run)(arg) for arg in args)
 
 def run(arg):
     # Unpack arguments
-    params, seed, cache_states, add_to_dir_path  = arg
+    params, seed, cache_states, add_to_dir_path, exp_dir = arg
     _exp_dir = exp_dir + add_to_dir_path
     os.makedirs(_exp_dir, exist_ok=True)
     if os.path.isfile(f'{_exp_dir}results.p'):
@@ -148,7 +144,7 @@ def run(arg):
         ax[2].set_title("Place field reconstruction,\nfantasy (wide search)")
 
         _, narrow_acts, outputs, _ = model.run_narrow_recall(place_inputs)
-        narrow_reconstruct = outputs[0]
+        narrow_reconstruct, seed_reconstruct = outputs
         if model_type == 'gaussian':
             narrow_reconstruct = narrow_reconstruct@place_inputs.transpose()
         ax[3].set_title("Barcode Activity Correlation,\nfantasy (narrow search)")
@@ -164,14 +160,13 @@ def run(arg):
             
         plt.savefig(_exp_dir + f'cache{cache_num}.png', dpi=300)
 
-        if exp == 'narrow_search_factor':
-            results['wide_acts'] = wide_acts
-            results['wide_reconstruct'] = wide_reconstruct
-            results['narrow_acts'] = narrow_acts
-            results['narrow_reconstruct'] = narrow_reconstruct
-            results['seed_reconstruct'] = seed_reconstruct
-
-    if exp != 'narrow_search_factor':
+    if exp == 'narrow_search_factor':
+        results['wide_acts'] = wide_acts
+        results['wide_reconstruct'] = wide_reconstruct
+        results['narrow_acts'] = narrow_acts
+        results['narrow_reconstruct'] = narrow_reconstruct
+        results['seed_reconstruct'] = seed_reconstruct
+    else:
         for s in param_sweep_search_strengths: 
             _, acts, outputs, _ = model.run_recall(s, place_inputs)
             reconstruct, seed_reconstruct = outputs
@@ -190,7 +185,7 @@ if __name__ == '__main__':
     # Run script
     import time
     start = time.time()
-    cpu_parallel()
+    cpu_parallel(args)
     end = time.time()
     print(f'ELAPSED TIME: {end-start} seconds')
 
