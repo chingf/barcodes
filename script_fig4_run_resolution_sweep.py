@@ -11,7 +11,7 @@ from PlaceInputs import PlaceInputs, PlaceInputsExp
 from utils import *
 import configs
 
-n_cpu_jobs = 40
+n_cpu_jobs = 48
 
 # Determine experiment
 exp = sys.argv[1]
@@ -114,6 +114,8 @@ def run(arg):
         return
 
     # Setup
+    print('Place params:')
+    print(place_input_params)
     place_inputs = PlaceClass(N_inp, num_states, **place_input_params).get_inputs()
     model = Model(N_inp, N_bar, num_states, **params)
     _, acts, _, _ = model.run_recurrent(place_inputs)

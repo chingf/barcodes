@@ -82,9 +82,11 @@ def get_resolution_summary_statistics(
         get_dist_from_attractor(cache_state_idxs)
 
     # Identification 1
+    nan_idxs = np.isnan(readout)
     for threshold in np.arange(0.0, 1.0, 0.1):
         _readout = np.digitize(readout, [threshold])
-        true_pos = np.sum(_readout[cache_state_idxs])
+        _readout[nan_idxs] = -1
+        true_pos = np.sum(_readout[cache_state_idxs]==1)
         true_neg = np.sum(_readout[noncache_state_idxs]==0)
         acc = (true_pos + true_neg)/num_states
         identification_1['threshold'].append(threshold)
@@ -100,6 +102,7 @@ def get_resolution_summary_statistics(
     cache_val = min([readout[c1], readout[c2]])
     nc1 = floor((c1 + c2)/2); nc2 = ceil((c1 + c2)/2);
     noncache_val = (readout[nc1] + readout[nc2])/2
+    
     identification_2['noncache val'].append(noncache_val)
     identification_2['noncache diff'].append(noncache_val-cache_val)
     identification_2['site spacing'].append(site_spacing)

@@ -1,10 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-fig_width = 6.4
-fig_height = 4.8
-
-n_states_per_site = 10
+states_per_site = 8
 
 import seaborn as sns
 sns.set(
@@ -44,11 +41,13 @@ sns.set(
              'ytick.minor.size': 1,
              'ytick.minor.width': .5})
 import matplotlib.pyplot as plt
-plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] + plt.rcParams['font.sans-serif']
+plt.rcParams['font.sans-serif'] = "Arial"
+plt.rcParams['font.family'] = "Arial"
+# plt.rcParams['font.family'] = 'sans-serif'
+# plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] + plt.rcParams['font.sans-serif']
 
 import os
 if os.environ['USER'] == 'chingfang':
-    engram_dir = '/Volumes/aronov-locker/Ching/rl/'
+    engram_dir = '/Volumes/aronov-locker/Ching/barcodes2/'
 else:
-    engram_dir = '/mnt/smb/locker/aronov-locker/Ching/rl/'
+    engram_dir = '/mnt/smb/locker/aronov-locker/Ching/barcodes2/'
